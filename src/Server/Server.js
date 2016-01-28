@@ -3,24 +3,24 @@
 
 class Server {
 
-    static get dependencies() {
+    static get services() {
 
-        return [ 'config', 'koa' ];
+        return [ 'config', 'koa', 'router' ];
 
     }
 
-    constructor( config, koa ) {
+    constructor( services ) {
 
-        this.config = config;
-        this.koa    = koa;
+        Object.assign( this, services );
 
     }
 
     start() {
 
-        this.koa.listen( 3000 );
-
-        console.log( this.config.get( 'database.knex.host' ) );
+        this.koa
+            .use( this.router.routes() )
+            .use( this.router.allowedMethods() )
+            .listen( 3000 );
 
     }
 

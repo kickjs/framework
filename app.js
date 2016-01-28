@@ -14,6 +14,7 @@ Registrar
     .register(
         require( './src/Config/ConfigProvider' ),
         require( './src/Koa/KoaProvider' ),
+        require( './src/Router/RouterProvider' ),
         require( './src/Server/ServerProvider' )
     )
     .resolve( function *() {

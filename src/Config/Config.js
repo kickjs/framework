@@ -8,16 +8,17 @@ const Glob    = Promise.promisify( require( 'glob' ) );
 
 class Config {
 
-    static get dependencies() {
+    static get services() {
 
         return [ 'env' ];
 
     }
 
-    constructor( env ) {
+    constructor( services ) {
 
-        this.env    = env;
-        this.config = {};
+        Object.assign( this, services, {
+            config: {}
+        } );
 
     }
 
@@ -44,17 +45,16 @@ class Config {
         return Co( function *() {
 
             let paths = [];
+            let path  = _.get( this.env, 'paths.app' );
+            let mode  = _.get( this.env, 'mode', 'development' );
 
-            if ( this.env )
+            if ( path )
             {
-                if ( this.env.paths && this.env.paths.app )
-                {
-                    paths.push( this.env.paths.app + '/Config' );
-                }
+                paths.push( path + '/Config' );
 
-                if ( this.env.mode )
+                if ( mode )
                 {
-                    paths.push( this.env.paths.app + '/Config/' + this.env.mode );
+                    paths.push( path + '/Config' + mode );
                 }
             }
 
