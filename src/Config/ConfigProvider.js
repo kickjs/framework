@@ -10,11 +10,7 @@ class ConfigProvider extends ServiceProvider {
 
         ioc.singleton( 'config', function *() {
 
-            let config = yield this.make( Config );
-
-            yield config.load();
-
-            return config;
+            return this.make( Config );
 
         } );
 

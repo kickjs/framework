@@ -1,7 +1,6 @@
 'use strict';
 
 const _       = require( 'lodash' );
-const Co      = require( 'co' );
 const Promise = require( 'bluebird' );
 const Glob    = Promise.promisify( require( 'glob' ) );
 
@@ -19,6 +18,8 @@ class Config {
         Object.assign( this, services, {
             config: {}
         } );
+
+        return this.load();
 
     }
 
@@ -42,55 +43,51 @@ class Config {
 
     load() {
 
-        return Co( function *() {
+        let paths = [];
+        let path  = _.get( this.env, 'paths.app' );
+        let mode  = _.get( this.env, 'mode', 'development' );
 
-            let paths = [];
-            let path  = _.get( this.env, 'paths.app' );
-            let mode  = _.get( this.env, 'mode', 'development' );
+        if ( path )
+        {
+            paths.push( path + '/Config' );
 
-            if ( path )
+            if ( mode )
             {
-                paths.push( path + '/Config' );
-
-                if ( mode )
-                {
-                    paths.push( path + '/Config' + mode );
-                }
+                paths.push( path + '/Config/' + mode );
             }
+        }
 
-            let configs = yield paths.map( path => this._load( path ) );
-
-            configs.forEach( config => {
+        return Promise
+            .all( paths )
+            .mapSeries( path => this._load( path ) )
+            .each( config => {
 
                 merge( this.config, config );
 
-            } );
-
-        }.bind( this ) );
+            } )
+            .return( this );
 
     }
 
     _load( path ) {
 
-        return Co( function *() {
-
-            let config = {};
-            let files  = yield Glob( '*.js', { cwd: path, nomount: true } );
-
-            files.forEach( file => {
+        return Glob( '*.js', { cwd: path, nomount: true } )
+            .reduce( ( config, file ) => {
 
                 let name = _.chain( file )
                     .replace( /\.js$/gi, '' )
                     .trim( '\\\/' )
                     .value();
 
-                config[ name ] = require( path + '/' + file );
+                let value = require( path + '/' + file );
 
-            } );
+                config[ name ] = _.isPlainObject( value )
+                    ? value
+                    : {};
 
-            return config;
+                return config;
 
-        }.bind( this ) );
+            }, {} );
 
     }
 
