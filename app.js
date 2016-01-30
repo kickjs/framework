@@ -8,14 +8,15 @@ Registrar
     .constant( 'env', {
         mode: 'development',
         paths: {
-            app: __dirname + '/app'
+            app: __dirname + '/app',
+            config: __dirname + '/config'
         }
     } )
     .register(
-        require( './src/Config/ConfigProvider' ),
-        require( './src/Koa/KoaProvider' ),
-        require( './src/Router/RouterProvider' ),
-        require( './src/Server/ServerProvider' )
+        require( './src/Config/provider' ),
+        require( './src/Koa/provider' ),
+        require( './src/Router/provider' ),
+        require( './src/Server/provider' )
     )
     .resolve( function *() {
 

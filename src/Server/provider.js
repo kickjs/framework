@@ -1,7 +1,7 @@
 'use strict';
 
 const ServiceProvider = require( 'kick-ioc/ServiceProvider' );
-const Server          = require( './Server' );
+const Server          = require( '../Server' );
 
 
 class ServerProvider extends ServiceProvider {

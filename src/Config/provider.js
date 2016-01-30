@@ -1,7 +1,7 @@
 'use strict';
 
 const ServiceProvider = require( 'kick-ioc/ServiceProvider' );
-const Config          = require( './Config' );
+const Config          = require( '../Config' );
 
 
 class ConfigProvider extends ServiceProvider {
