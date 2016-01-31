@@ -43,29 +43,22 @@ class Config {
 
     load() {
 
-        let paths = [];
-        let path  = _.get( this.env, 'paths.app' );
-        let mode  = _.get( this.env, 'mode', 'development' );
+        let path = _.get( this.env, 'paths.app' );
 
-        if ( path )
-        {
-            paths.push( path + '/Config' );
+        return Glob( '*/config/**.js', { cwd: path, nomount: true } )
+            .mapSeries( file =>
+                _( _.chain( file )
+                    .replace( /\.js$/gi, '' )
+                    .trim( '\\\/' )
+                    .split( /[\\\/]/g )
+                    .value() )
+                    .tap( nodes => {
+                        nodes.splice( 1, 0, nodes.shift() );
+                    } )
+                    .value()
+            )
+            .then( console.log )
 
-            if ( mode )
-            {
-                paths.push( path + '/Config/' + mode );
-            }
-        }
-
-        return Promise
-            .all( paths )
-            .mapSeries( path => this._load( path ) )
-            .each( config => {
-
-                merge( this.config, config );
-
-            } )
-            .return( this );
 
     }
 
