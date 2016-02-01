@@ -13,10 +13,10 @@ Registrar
         }
     } )
     .register(
-        require( './src/Config/provider' ),
-        require( './src/Koa/provider' ),
-        require( './src/Router/provider' ),
-        require( './src/Server/provider' )
+        require( './src/App/ConfigProvider' ),
+        require( './src/Koa/KoaProvider' ),
+        require( './src/Router/RouterProvider' ),
+        require( './src/Server/ServerProvider' )
     )
     .resolve( function *() {
 
