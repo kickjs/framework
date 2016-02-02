@@ -1,7 +1,6 @@
 'use strict';
 
 const _       = require( 'lodash' );
-const Co      = require( 'co' );
 const Promise = require( 'bluebird' );
 const Glob    = Promise.promisify( require( 'glob' ) );
 
@@ -60,66 +59,30 @@ class Config {
         return Promise.all( patterns )
             .mapSeries( pattern => Glob( pattern, { cwd: path, nomount: true } ) )
             .reduce( ( files, file ) => files.concat( file ), [] )
-            .mapSeries( file => _( file )
-                .chain()
-                .replace( /\.js$/gi, '' )
-                .trim( '\\\/' )
-                .split( /[\\\/]/g )
-                .tap( array => {
-                    array.splice( 1, 2 );
-                } )
-                .join( '.' )
-                .value()
-            )
-            /*.reduce( ( config, file ) => {
+            .each( file => {
 
-             let name = _( file )
-             .chain()
-             .replace( /\.js$/gi, '' )
-             .trim( '\\\/' )
-             .split( /[\\\/]/g )
-             .tap( array => {
-             array.splice( 1, 1 );
-             } )
-             .join( '.' )
-             .value();
-
-             let value = require( path + '/' + file );
-
-             if ( !_.isPlainObject( value ) )
-             {
-             value = {};
-             }
-
-             merge( config, _.set( {}, name, value ) );
-
-             return config;
-
-             }, {} )*/
-            .tap( console.log )
-
-
-    }
-
-    _load( path ) {
-
-        return Glob( '*.js', { cwd: path, nomount: true } )
-            .reduce( ( config, file ) => {
-
-                let name = _.chain( file )
+                let name = _( file )
+                    .chain()
                     .replace( /\.js$/gi, '' )
                     .trim( '\\\/' )
+                    .split( /[\\\/]/g )
+                    .tap( array => {
+                        array.splice( 1, 2 );
+                    } )
+                    .join( '.' )
                     .value();
 
                 let value = require( path + '/' + file );
 
-                config[ name ] = _.isPlainObject( value )
-                    ? value
-                    : {};
+                if ( !_.isPlainObject( value ) )
+                {
+                    value = {};
+                }
 
-                return config;
+                merge( this.config, _.set( {}, name, value ) );
 
-            }, {} );
+            } )
+            .return( this );
 
     }
 

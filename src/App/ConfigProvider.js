@@ -8,7 +8,7 @@ class ConfigProvider extends ServiceProvider {
 
     register( ioc ) {
 
-        ioc.singleton( 'config', function *() {
+        ioc.singleton( 'config', function () {
 
             return this.make( Config );
 

@@ -21,10 +21,12 @@ Registrar
     .resolve( function *() {
 
         let server = yield this.use( 'server' );
+        let config = yield this.use( 'config' );
 
         server.start();
 
         console.log( 'server.start();' );
+        console.log( config.get( 'app' ) );
 
     } )
     .catch( function ( err ) {
