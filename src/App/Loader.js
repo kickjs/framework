@@ -35,11 +35,10 @@ export function loadConfig() {
                     .replace( /\.js$/gi, '' )
                     .trim( '\\\/' )
                     .split( /[\\\/]/g )
-                    .tap( array => {
-                        array.splice( 1, 2 );
+                    .tap( nodes => {
+                        nodes.splice( 1, 2 );
                     } )
-                    .join( '.' )
-                    .value();
+                    .join( '.' );
 
                 let value = require( path + '/' + file );
 
