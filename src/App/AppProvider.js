@@ -1,16 +1,16 @@
 'use strict';
 
 const ServiceProvider = require( 'kick-ioc/ServiceProvider' );
-const Config          = require( './Config' );
+const App             = require( './App' );
 
 
 class ConfigProvider extends ServiceProvider {
 
     register( ioc ) {
 
-        ioc.singleton( 'config', function () {
+        ioc.singleton( 'app', function () {
 
-            return this.make( Config );
+            return this.make( App );
 
         } );
 

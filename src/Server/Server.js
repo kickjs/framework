@@ -5,7 +5,7 @@ class Server {
 
     static get services() {
 
-        return [ 'config', 'koa', 'router' ];
+        return [ 'app', 'koa', 'router' ];
 
     }
 

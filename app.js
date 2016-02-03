@@ -8,12 +8,11 @@ Registrar
     .constant( 'env', {
         mode: 'development',
         paths: {
-            app: __dirname + '/app',
-            config: __dirname + '/config'
+            app: __dirname + '/app'
         }
     } )
     .register(
-        require( './src/App/ConfigProvider' ),
+        require( './src/App/AppProvider' ),
         require( './src/Koa/KoaProvider' ),
         require( './src/Router/RouterProvider' ),
         require( './src/Server/ServerProvider' )
@@ -21,12 +20,13 @@ Registrar
     .resolve( function *() {
 
         let server = yield this.use( 'server' );
-        let config = yield this.use( 'config' );
+        let app = yield this.use( 'app' );
 
         server.start();
 
         console.log( 'server.start();' );
-        console.log( config.get( 'app' ) );
+
+        console.log( app.config );
 
     } )
     .catch( function ( err ) {

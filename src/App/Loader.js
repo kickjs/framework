@@ -1,50 +1,18 @@
 'use strict';
 
 const _       = require( 'lodash' );
+const Co      = require( 'co' );
 const Promise = require( 'bluebird' );
 const Glob    = Promise.promisify( require( 'glob' ) );
 
 
-class Config {
+export function loadConfig() {
 
-    static get services() {
+    return Co( function *() {
 
-        return [ 'env' ];
+        let mode = _.get( this.env, 'mode' );
+        let path = _.get( this.env, 'paths.app' );
 
-    }
-
-    constructor( services ) {
-
-        Object.assign( this, services, {
-            config: {}
-        } );
-
-        return this.load();
-
-    }
-
-    get( ...args ) {
-
-        return _.get( this.config, ...args );
-
-    }
-
-    set( ...args ) {
-
-        return _.set( this.config, ...args );
-
-    }
-
-    has( ...args ) {
-
-        return _.has( this.config, ...args );
-
-    }
-
-    load() {
-
-        let mode     = _.get( this.env, 'mode' );
-        let path     = _.get( this.env, 'paths.app' );
         let patterns = [
             '*/config/defaults.js',
             '*/config/defaults/**.js'
@@ -56,10 +24,11 @@ class Config {
             patterns.push( '*/config/' + mode + '/**.js' );
         }
 
-        return Promise.all( patterns )
-            .mapSeries( pattern => Glob( pattern, { cwd: path, nomount: true } ) )
-            .reduce( ( files, file ) => files.concat( file ), [] )
-            .each( file => {
+        let globs = yield patterns.map( pattern => Glob( pattern, { cwd: path, nomount: true } ) );
+
+        globs.forEach( files => {
+
+            files.forEach( file => {
 
                 let name = _( file )
                     .chain()
@@ -81,10 +50,28 @@ class Config {
 
                 merge( this.config, _.set( {}, name, value ) );
 
-            } )
-            .return( this );
+            } );
 
-    }
+        } );
+
+    }.bind( this ) );
+
+}
+
+
+export function loadControllers() {
+
+    return Co( function *() {
+
+        let path  = _.get( this.env, 'paths.app' );
+        let files = yield Glob( '*/controllers/**.js', { cwd: path, nomount: true } );
+
+        files.forEach( file => {
+
+
+        } );
+
+    }.bind( this ) );
 
 }
 
@@ -99,6 +86,3 @@ function merge( a, b ) {
     return _.merge( a, b, merge );
 
 }
-
-
-module.exports = Config;
