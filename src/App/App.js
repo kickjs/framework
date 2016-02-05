@@ -8,19 +8,24 @@ class App {
 
     static get services() {
 
-        return [ 'env' ];
+        return [ 'Ioc', 'Env' ];
 
     }
 
     constructor( services ) {
 
         Object.assign( this, services, {
-            config: {}
+            config: {},
+            helpers: {},
+            services: {},
+            controllers: {}
         } );
 
         return Promise
             .bind( this, this )
-            .tap( Loader.loadConfig );
+            .tap( Loader.loadConfig )
+            .tap( Loader.loadNamespaces )
+            .tap( Loader.loadControllers );
 
     }
 

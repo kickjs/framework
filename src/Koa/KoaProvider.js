@@ -8,7 +8,7 @@ class KoaProvider extends ServiceProvider {
 
     register( ioc ) {
 
-        ioc.singleton( 'koa', function () {
+        ioc.singleton( 'Koa', function () {
 
             return new Koa();
 

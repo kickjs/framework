@@ -10,46 +10,80 @@ export function loadConfig() {
 
     return Co( function *() {
 
-        let mode = _.get( this.env, 'mode' );
-        let path = _.get( this.env, 'paths.app' );
+        let mode = _.get( this.Env, 'mode' );
+        let path = _.get( this.Env, 'paths.app' );
 
         let patterns = [
-            '*/config/defaults.js',
-            '*/config/defaults/**.js'
+            '*/Config/defaults.js',
+            '*/Config/defaults/**.js'
         ];
 
         if ( mode )
         {
-            patterns.push( '*/config/' + mode + '.js' );
-            patterns.push( '*/config/' + mode + '/**.js' );
+            patterns.push(
+                '*/Config/' + mode + '.js',
+                '*/Config/' + mode + '/**.js'
+            );
         }
 
-        let globs = yield patterns.map( pattern => Glob( pattern, { cwd: path, nomount: true } ) );
+        let files = _( yield patterns
+            .map( pattern => Glob( pattern, { cwd: path, nomount: true } ) ) )
+            .flatten()
+            .value();
 
-        globs.forEach( files => {
+        files.forEach( file => {
 
-            files.forEach( file => {
+            let name = _( file )
+                .chain()
+                .replace( /\.js$/gi, '' )
+                .split( /[\\\/]/g )
+                .compact()
+                .thru( ( [ name,,, ...names ] ) => [ name ].concat( names ).join( '.' ) )
+                .value();
 
-                let name = _( file )
-                    .chain()
-                    .replace( /\.js$/gi, '' )
-                    .trim( '\\\/' )
-                    .split( /[\\\/]/g )
-                    .tap( nodes => {
-                        nodes.splice( 1, 2 );
-                    } )
-                    .join( '.' );
+            let value = require( [ path, file ].join( '/' ) );
 
-                let value = require( path + '/' + file );
+            if ( !_.isPlainObject( value ) )
+            {
+                value = {};
+            }
 
-                if ( !_.isPlainObject( value ) )
-                {
-                    value = {};
-                }
+            merge( this.config, _.set( {}, name, value ) );
 
-                merge( this.config, _.set( {}, name, value ) );
+        } );
 
-            } );
+
+    }.bind( this ) );
+
+}
+
+
+export function loadNamespaces() {
+
+    return Co( function *() {
+
+        let path = _.get( this.Env, 'paths.app' );
+
+        let patterns = [
+            '*/*/',
+            '*/*/'
+        ];
+
+        let folders = _( yield patterns
+            .map( pattern => Glob( pattern, { cwd: path, nomount: true } ) ) )
+            .flatten()
+            .value();
+
+        folders.forEach( folder => {
+
+            let namespace = _( folder )
+                .chain()
+                .split( /[\\\/]/g )
+                .compact()
+                .join( '/' )
+                .value();
+
+            this.Ioc.namespace( namespace, [ path, folder ].join( '/' ) );
 
         } );
 
@@ -62,11 +96,28 @@ export function loadControllers() {
 
     return Co( function *() {
 
-        let path  = _.get( this.env, 'paths.app' );
-        let files = yield Glob( '*/controllers/**.js', { cwd: path, nomount: true } );
+        let path = _.get( this.Env, 'paths.app' );
+
+        let files = yield Glob( '*/Controllers/**.js', { cwd: path, nomount: true } );
+
+        let instances = yield _( files )
+            .zipObject( files )
+            .mapValues( file => this.Ioc.make( [ path, file ].join( '/' ) ) )
+            .value();
 
         files.forEach( file => {
 
+            let name = _( file )
+                .chain()
+                .replace( /\.js$/gi, '' )
+                .split( /[\\\/]/g )
+                .compact()
+                .thru( ( [ name,, ...names ] ) => [ name ].concat( names ).join( '/' ) )
+                .value();
+
+            let value = instances[ file ];
+
+            merge( this.controllers, _.set( {}, name, value ) );
 
         } );
 

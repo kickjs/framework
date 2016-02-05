@@ -8,7 +8,7 @@ class RouterProvider extends ServiceProvider {
 
     register( ioc ) {
 
-        ioc.singleton( 'router', function () {
+        ioc.singleton( 'Router', function () {
 
             return new Router();
 

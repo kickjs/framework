@@ -5,11 +5,14 @@ const Registrar = require( 'kick-ioc/Registrar' );
 
 
 Registrar
-    .constant( 'env', {
+    .constant( 'Env', {
         mode: 'development',
         paths: {
-            app: __dirname + '/app'
+            app: __dirname + '/App'
         }
+    } )
+    .bind( 'Ioc', function () {
+        return this;
     } )
     .register(
         require( './src/App/AppProvider' ),
@@ -19,14 +22,14 @@ Registrar
     )
     .resolve( function *() {
 
-        let server = yield this.use( 'server' );
-        let app = yield this.use( 'app' );
+        let [ Server, App ] = yield [ this.use( 'Server' ), this.use( 'App' ) ];
 
-        server.start();
+        Server.start();
 
         console.log( 'server.start();' );
 
-        console.log( app.config );
+        console.log( App.config );
+        console.log( App.controllers );
 
     } )
     .catch( function ( err ) {

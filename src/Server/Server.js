@@ -5,7 +5,7 @@ class Server {
 
     static get services() {
 
-        return [ 'app', 'koa', 'router' ];
+        return [ 'App', 'Koa', 'Router' ];
 
     }
 
@@ -17,10 +17,10 @@ class Server {
 
     start() {
 
-        this.koa
-            .use( this.router.routes() )
-            .use( this.router.allowedMethods() )
-            .listen( 3000 );
+        this.Koa
+            .use( this.Router.routes() )
+            .use( this.Router.allowedMethods() )
+            .listen( 8000 );
 
     }
 

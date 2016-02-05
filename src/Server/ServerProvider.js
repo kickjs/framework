@@ -8,7 +8,7 @@ class ServerProvider extends ServiceProvider {
 
     register( ioc ) {
 
-        ioc.singleton( 'server', function () {
+        ioc.singleton( 'Server', function () {
 
             return this.make( Server );
 
