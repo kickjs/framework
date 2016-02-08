@@ -1,9 +1,9 @@
 'use strict';
 
-const _       = require( 'lodash' );
-const Co      = require( 'co' );
-const Promise = require( 'bluebird' );
-const Glob    = Promise.promisify( require( 'glob' ) );
+const _           = require( 'lodash' );
+const Co          = require( 'co' );
+const Promise     = require( 'bluebird' );
+const Glob        = Promise.promisify( require( 'glob' ) );
 
 
 export function loadConfig() {
@@ -13,28 +13,21 @@ export function loadConfig() {
         let mode = _.get( this.Env, 'mode' );
         let path = _.get( this.Env, 'paths.app' );
 
-        let patterns = [
-            '*/Config/defaults.js',
-            '*/Config/defaults/**.js'
-        ];
+        let patterns = [ '/defaults.js', '/defaults/**.js' ];
 
         if ( mode )
         {
-            patterns.push(
-                '*/Config/' + mode + '.js',
-                '*/Config/' + mode + '/**.js'
-            );
+            patterns.push( mode + '.js', mode + '/**.js' );
         }
 
         let files = _( yield patterns
-            .map( pattern => Glob( pattern, { cwd: path, nomount: true } ) ) )
+            .map( pattern => Glob( '*/Config/' + pattern, { cwd: path, nomount: true } ) ) )
             .flatten()
             .value();
 
         files.forEach( file => {
 
-            let name = _( file )
-                .chain()
+            let name = _.chain( file )
                 .replace( /\.js$/gi, '' )
                 .split( /[\\\/]/g )
                 .compact()
@@ -64,20 +57,11 @@ export function loadNamespaces() {
 
         let path = _.get( this.Env, 'paths.app' );
 
-        let patterns = [
-            '*/*/',
-            '*/*/'
-        ];
-
-        let folders = _( yield patterns
-            .map( pattern => Glob( pattern, { cwd: path, nomount: true } ) ) )
-            .flatten()
-            .value();
+        let folders = yield Glob( '*/*/', { cwd: path, nomount: true } );
 
         folders.forEach( folder => {
 
-            let namespace = _( folder )
-                .chain()
+            let namespace = _.chain( folder )
                 .split( /[\\\/]/g )
                 .compact()
                 .join( '/' )
@@ -107,8 +91,7 @@ export function loadControllers() {
 
         files.forEach( file => {
 
-            let name = _( file )
-                .chain()
+            let name = _.chain( file )
                 .replace( /\.js$/gi, '' )
                 .split( /[\\\/]/g )
                 .compact()
