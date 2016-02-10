@@ -8,13 +8,11 @@ Registrar
     .constant( 'Env', {
         mode: 'development',
         paths: {
-            app: __dirname + '/App'
+            app: __dirname + '/app'
         }
     } )
-    .bind( 'Ioc', function () {
-        return this;
-    } )
     .register(
+        require( './src/Ioc/IocProvider' ),
         require( './src/App/AppProvider' ),
         require( './src/Koa/KoaProvider' ),
         require( './src/Router/RouterProvider' ),
@@ -22,7 +20,7 @@ Registrar
     )
     .resolve( function *() {
 
-        let [ Server, App ] = yield [ this.use( 'Server' ), this.use( 'App' ) ];
+        let [ Server, App ] = yield this.use( 'Server', 'App' );
 
         Server.start();
 
