@@ -13,27 +13,20 @@ export function loadConfig() {
         let mode = _.get( this.Env, 'mode' );
         let path = _.get( this.Env, 'paths.app' );
 
-        let patterns = [ '/defaults.js', '/defaults/**.js' ];
+        let patterns = [ '*/Config/defaults.js', '*/Config/defaults/**.js' ];
 
         if ( mode )
         {
-            patterns.push( mode + '.js', mode + '/**.js' );
+            patterns.push( '*/Config/' + mode + '.js', '*/Config/' + mode + '/**.js' );
         }
 
-        let files = _( yield patterns
-            .map( pattern => Glob( '*/Config/' + pattern, { cwd: path, nomount: true } ) ) )
-            .flatten()
-            .value();
+        let results = yield globMulti( path, ...patterns );
 
-        files.forEach( file => {
+        results.forEach( ( [ file, nodes ] ) => {
 
-            let name = _.chain( file )
-                .replace( /\.js$/gi, '' )
-                .split( /[\\\/]/g )
-                .compact()
-                .thru( ( [ name,,, ...names ] ) => [ name ].concat( names ).join( '.' ) )
-                .value();
+            nodes.splice( 1, 2 );
 
+            let name  = nodes.join( '.' );
             let value = require( [ path, file ].join( '/' ) );
 
             if ( !_.isPlainObject( value ) )
@@ -57,17 +50,14 @@ export function loadNamespaces() {
 
         let path = _.get( this.Env, 'paths.app' );
 
-        let folders = yield Glob( '*/*/', { cwd: path, nomount: true } );
+        let results = yield globMulti( path, '*/{Services,Helpers}' );
 
-        folders.forEach( folder => {
+        results.forEach( ( [ folder, nodes ] ) => {
 
-            let namespace = _.chain( folder )
-                .split( /[\\\/]/g )
-                .compact()
-                .join( '/' )
-                .value();
+            let namespace = nodes.join( '/' );
+            let target    = [ path, folder ].join( '/' );
 
-            this.Ioc.namespace( namespace, [ path, folder ].join( '/' ) );
+            this.Ioc.namespace( namespace, target );
 
         } );
 
@@ -82,21 +72,20 @@ export function loadControllers() {
 
         let path = _.get( this.Env, 'paths.app' );
 
-        let files = yield Glob( '*/Controllers/**.js', { cwd: path, nomount: true } );
+        let results = yield globMulti( path, '*/Controllers/**.js' );
 
-        let instances = yield _( files )
-            .zipObject( files )
-            .mapValues( file => this.Ioc.make( [ path, file ].join( '/' ) ) )
-            .value();
+        let instances = {};
 
-        files.forEach( file => {
+        results.forEach( ( [ file, nodes ] ) => {
 
-            let name = _.chain( file )
-                .replace( /\.js$/gi, '' )
-                .split( /[\\\/]/g )
-                .compact()
-                .thru( ( [ name,, ...names ] ) => [ name ].concat( names ).join( '/' ) )
-                .value();
+            nodes.splice( 1, 1 );
+
+            let name = nodes.join( '/' );
+
+            if ( !instances[ file ] )
+            {
+                instances[ file ] = this.Ioc.make( [ path, file ].join( '/' ) );
+            }
 
             let value = instances[ file ];
 
@@ -104,12 +93,14 @@ export function loadControllers() {
 
         } );
 
+        yield this.controllers;
+
     }.bind( this ) );
 
 }
 
 
-function globMulti( patterns, path ) {
+function globMulti( path, ...patterns ) {
 
     return Promise.all( patterns )
         .mapSeries( pattern => Glob( pattern, { cwd: path, nomount: true } ) )
