@@ -8,7 +8,8 @@ Registrar
     .constant( 'Env', {
         mode: 'development',
         paths: {
-            app: __dirname + '/app'
+            app: __dirname + '/app',
+            config: __dirname + '/config'
         }
     } )
     .register(

@@ -1,9 +1,9 @@
 'use strict';
 
-const _           = require( 'lodash' );
-const Co          = require( 'co' );
-const Promise     = require( 'bluebird' );
-const Glob        = Promise.promisify( require( 'glob' ) );
+const _       = require( 'lodash' );
+const Co      = require( 'co' );
+const Promise = require( 'bluebird' );
+const Glob    = Promise.promisify( require( 'glob' ) );
 
 
 export function loadConfig() {
@@ -105,6 +105,23 @@ export function loadControllers() {
         } );
 
     }.bind( this ) );
+
+}
+
+
+function globMulti( patterns, path ) {
+
+    return Promise.all( patterns )
+        .mapSeries( pattern => Glob( pattern, { cwd: path, nomount: true } ) )
+        .reduce( ( results, files ) => results.concat( files ), [] )
+        .mapSeries( file => [
+            file,
+            _.chain( file )
+                .replace( /\.js$/gi, '' )
+                .split( /[\\\/]/g )
+                .compact()
+                .value()
+        ] );
 
 }
 
