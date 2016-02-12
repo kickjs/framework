@@ -10,34 +10,55 @@ export function loadConfig() {
 
     return Co( function *() {
 
-        let mode = _.get( this.Env, 'mode' );
-        let path = _.get( this.Env, 'paths.app' );
+        let mode       = _.get( this.Env, 'mode' );
+        let appPath    = _.get( this.Env, 'paths.app' );
+        let configPath = _.get( this.Env, 'paths.config' );
 
-        let patterns = [ '*/Config/defaults.js', '*/Config/defaults/**.js' ];
+        let patterns = [ 'defaults.js', 'defaults/**.js' ];
 
         if ( mode )
         {
-            patterns.push( '*/Config/' + mode + '.js', '*/Config/' + mode + '/**.js' );
+            patterns.push( mode + '.js', mode + '/**.js' );
         }
 
-        let results = yield globMulti( path, ...patterns );
+        let results = [];
+
+        yield globMulti( configPath, ...patterns )
+            .each( ( [ file, nodes ] ) => {
+
+                nodes.splice( 0, 1 );
+
+                results.push( [ file, nodes ] );
+
+            } );
+
+        yield globMulti( appPath, ...patterns.map( pattern => '*/Config/' + pattern ) )
+            .each( ( [ file, nodes ] ) => {
+
+                nodes.splice( 1, 2 );
+
+                results.push( [ file, nodes ] );
+
+            } );
 
         results.forEach( ( [ file, nodes ] ) => {
 
-            nodes.splice( 1, 2 );
-
             let name  = nodes.join( '.' );
-            let value = require( [ path, file ].join( '/' ) );
+            let value = require( file );
 
             if ( !_.isPlainObject( value ) )
             {
                 value = {};
             }
 
-            merge( this.config, _.set( {}, name, value ) );
+            if ( name )
+            {
+                value = _.set( {}, name, value );
+            }
+
+            merge( this.config, value );
 
         } );
-
 
     }.bind( this ) );
 
@@ -50,16 +71,14 @@ export function loadNamespaces() {
 
         let path = _.get( this.Env, 'paths.app' );
 
-        let results = yield globMulti( path, '*/{Services,Helpers}' );
+        yield globMulti( path, '*/{Services,Helpers}' )
+            .each( ( [ folder, nodes ] ) => {
 
-        results.forEach( ( [ folder, nodes ] ) => {
+                let namespace = nodes.join( '/' );
 
-            let namespace = nodes.join( '/' );
-            let target    = [ path, folder ].join( '/' );
+                this.Ioc.namespace( namespace, folder );
 
-            this.Ioc.namespace( namespace, target );
-
-        } );
+            } );
 
     }.bind( this ) );
 
@@ -72,28 +91,21 @@ export function loadControllers() {
 
         let path = _.get( this.Env, 'paths.app' );
 
-        let results = yield globMulti( path, '*/Controllers/**.js' );
+        let controllers = {};
 
-        let instances = {};
+        yield globMulti( path, '*/Controllers/**.js' )
+            .each( ( [ file, nodes ] ) => {
 
-        results.forEach( ( [ file, nodes ] ) => {
+                nodes.splice( 1, 1 );
 
-            nodes.splice( 1, 1 );
+                let name  = nodes.join( '/' );
+                let value = this.Ioc.make( file );
 
-            let name = nodes.join( '/' );
+                controllers[ name ] = value;
 
-            if ( !instances[ file ] )
-            {
-                instances[ file ] = this.Ioc.make( [ path, file ].join( '/' ) );
-            }
+            } );
 
-            let value = instances[ file ];
-
-            merge( this.controllers, _.set( {}, name, value ) );
-
-        } );
-
-        yield this.controllers;
+        this.controllers = yield controllers;
 
     }.bind( this ) );
 
@@ -106,10 +118,11 @@ function globMulti( path, ...patterns ) {
         .mapSeries( pattern => Glob( pattern, { cwd: path, nomount: true } ) )
         .reduce( ( results, files ) => results.concat( files ), [] )
         .mapSeries( file => [
-            file,
+            [ path, file ]
+                .join( '/' ),
             _.chain( file )
                 .replace( /\.js$/gi, '' )
-                .split( /[\\\/]/g )
+                .split( /[\\\/]+/g )
                 .compact()
                 .value()
         ] );
